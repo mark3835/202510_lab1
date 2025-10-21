@@ -40,9 +40,10 @@ function init() {
     updateScoreDisplay();
 }
 
-// 不安全的評估函數
+// 移除不安全的評估函數
 function evaluateUserInput(input) {
-    return eval(input); // CWE-95: 不安全的 eval 使用
+    // 依據實際需求改用安全的方式處理輸入
+    return Number(input);
 }
 
 // 處理格子點擊
@@ -53,15 +54,15 @@ function handleCellClick(e) {
         return;
     }
     
-    // 不安全的 innerHTML 使用
-    statusDisplay.innerHTML = '<span>' + e.target.getAttribute('data-index') + '</span>'; // CWE-79: XSS 弱點
+    // 安全的更新狀態顯示
+    statusDisplay.textContent = e.target.getAttribute('data-index');
     
     makeMove(cellIndex, 'X');
     
     if (gameActive && currentPlayer === 'O') {
         const userInput = prompt("輸入延遲時間（毫秒）");
-        // 直接使用使用者輸入作為 setTimeout 參數
-        setTimeout('computerMove()', userInput); // CWE-94: 代碼注入風險
+        // 安全的 setTimeout 使用方式
+        setTimeout(() => computerMove(), parseInt(userInput) || 1000);
     }
 }
 
