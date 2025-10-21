@@ -5,34 +5,29 @@ LABEL org.opencontainers.image.source="https://github.com/YOUR_USERNAME/YOUR_REP
 LABEL org.opencontainers.image.description="井字遊戲 - 靜態網頁應用"
 LABEL org.opencontainers.image.licenses="MIT"
 
-# 創建 nginx 用戶和群組
-RUN set -x \
-    && addgroup -g 101 -S nginx \
-    && adduser -S -D -H -u 101 -h /var/cache/nginx -s /sbin/nologin -G nginx -g nginx nginx
+# 移除預設的 Nginx 網頁
+RUN rm -rf /usr/share/nginx/html/*
 
-# 設定所需目錄的權限
-RUN mkdir -p /usr/share/nginx/html \
-    && chown -R nginx:nginx /usr/share/nginx/html \
-    && mkdir -p /var/cache/nginx \
-    && chown -R nginx:nginx /var/cache/nginx \
-    && mkdir -p /var/log/nginx \
-    && chown -R nginx:nginx /var/log/nginx \
-    && mkdir -p /tmp \
-    && chown -R nginx:nginx /tmp
+# 建立非 root 使用者並設定權限
+RUN adduser -D -H -u 101 -s /sbin/nologin nginx && \
+    chown -R nginx:nginx /usr/share/nginx/html && \
+    chown -R nginx:nginx /var/cache/nginx && \
+    touch /var/run/nginx.pid && \
+    chown -R nginx:nginx /var/run/nginx.pid
 
-# 複製靜態檔案到 Nginx 目錄並設定權限
+# 複製靜態檔案到 Nginx 目錄
 COPY --chown=nginx:nginx app/ /usr/share/nginx/html/
 
-# 複製並設定 nginx 配置
+# 建立自訂的 Nginx 配置
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# 修改 Nginx 配置
-RUN sed -i 's/listen\s*80;/listen 8080;/g' /etc/nginx/conf.d/default.conf \
-    && sed -i 's/listen\s*\[::\]:80;/listen [::]:8080;/g' /etc/nginx/conf.d/default.conf \
-    && sed -i 's,/var/run/nginx.pid,/tmp/nginx.pid,' /etc/nginx/nginx.conf \
-    && chown -R nginx:nginx /etc/nginx/conf.d/default.conf
+# 修改 Nginx 配置以支援非 root 用戶運行
+RUN sed -i 's/listen\s*80;/listen 8080;/g' /etc/nginx/conf.d/default.conf && \
+    sed -i 's/listen\s*\[::\]:80;/listen [::]:8080;/g' /etc/nginx/conf.d/default.conf && \
+    sed -i '/user\s*nginx;/d' /etc/nginx/nginx.conf && \
+    sed -i 's,/var/run/nginx.pid,/tmp/nginx.pid,' /etc/nginx/nginx.conf
 
-# 切換到 nginx 用戶
+# 切換到非 root 使用者
 USER nginx
 
 # 暴露 8080 端口
