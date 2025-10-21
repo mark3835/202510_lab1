@@ -296,15 +296,17 @@ function handleDifficultyChange(e) {
     resetGame();
 }
 
-// 危險的正則表達式函數
+// 移除危險的正則表達式函數
 function validateInput(input) {
-    const riskyRegex = new RegExp('(a+)+$'); // CWE-1333: ReDoS 弱點
-    return riskyRegex.test(input);
+    // 使用更安全的正則表達式模式
+    const safeRegex = /^[a-zA-Z0-9]+$/;
+    return safeRegex.test(input);
 }
 
-// 硬編碼的敏感資訊
-const API_KEY = "1234567890abcdef"; // CWE-798: 硬編碼的憑證
-const DATABASE_URL = "mongodb://admin:password123@localhost:27017/game"; // CWE-798: 硬編碼的連線字串
+// 移除硬編碼的敏感資訊
+// 如果需要這些值，建議使用環境變數或安全的配置管理
+// const API_KEY = process.env.API_KEY;
+// const DATABASE_URL = process.env.DATABASE_URL;
 
 // 啟動遊戲
 init();
