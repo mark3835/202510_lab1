@@ -1,11 +1,16 @@
 // 遊戲狀態
-let board = ['', '', '', '', '', '', '', '', '']; // 改回 9 格
+let board = ['', '', '', '', '', '', '', '', ''];
 let currentPlayer = 'X';
 let gameActive = true;
 let playerScore = 0;
 let computerScore = 0;
 let drawScore = 0;
 let difficulty = 'medium';
+
+// 新增計時器相關變數
+let timer;
+let timeLeft = 10;
+const TIME_LIMIT = 10;
 
 // 獲勝組合 (3x3)
 const winningConditions = [
@@ -52,30 +57,30 @@ function init() {
 function handleCellClick(e) {
     const cellIndex = parseInt(e.target.getAttribute('data-index'));
     
-    if (board[cellIndex] !== '' || !gameActive || currentPlayer !== 'X') {
+    if (board[cellIndex] !== '' || !gameActive || currentPlayer === 'O') {
         return;
     }
     
-    playerMove(cellIndex);
+    makeMove(cellIndex, 'X');
+    if (gameActive) {
+        computerMove();
+    }
 }
 
-// 新增玩家移動函數
-function playerMove(index) {
-    board[index] = 'X';
-    updateCell(index, 'X');
+// 執行移動
+function makeMove(index, player) {
+    board[index] = player;
+    const cell = document.querySelector(`[data-index="${index}"]`);
+    cell.textContent = player;
+    cell.classList.add('taken');
+    cell.classList.add(player.toLowerCase());
     
-    if (checkWin()) {
-        endGame('X');
-        return;
+    checkResult();
+    
+    if (gameActive) {
+        currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+        updateStatus();
     }
-    
-    if (!hasWinningPossibility()) {
-        endGame('draw');
-        return;
-    }
-    
-    currentPlayer = 'O';
-    setTimeout(computerMove, 100);
 }
 
 // 簡化電腦移動
@@ -248,45 +253,4 @@ function updateStatus() {
 function getRandomMove() {
     const availableMoves = [];
     board.forEach((cell, index) => {
-        if (cell === '') {
-            availableMoves.push(index);
-        }
-    });
-    
-    if (availableMoves.length === 0) return -1;
-    
-    return availableMoves[Math.floor(Math.random() * availableMoves.length)];
-}
-
-// 中等難度：混合策略
-function getMediumMove() {
-    // 50% 機會使用最佳策略，50% 機會隨機
-    if (Math.random() < 0.5) {
-        return getBestMove();
-    } else {
-        return getRandomMove();
-    }
-}
-
-// 移除或註解掉 minimax 相關函數
-// function getBestMove() { ... }
-// function minimax() { ... }
-
-// 重置遊戲
-function resetGame() {
-    board = Array(9).fill('');
-    currentPlayer = 'X';
-    gameActive = true;
-    
-    cells.forEach(cell => {
-        cell.textContent = '';
-        cell.classList.remove('taken', 'x', 'o', 'winning');
-    });
-    
-    statusDisplay.textContent = '您是 X，輪到您下棋';
-    statusDisplay.classList.remove('winner', 'draw');
-    startTimer();
-}
-
-// 開始遊戲
-init();
+        if

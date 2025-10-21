@@ -5,32 +5,37 @@ LABEL org.opencontainers.image.source="https://github.com/YOUR_USERNAME/YOUR_REP
 LABEL org.opencontainers.image.description="井字遊戲 - 靜態網頁應用"
 LABEL org.opencontainers.image.licenses="MIT"
 
-# 移除預設的 Nginx 網頁
-RUN rm -rf /usr/share/nginx/html/*
+# 創建 nginx 用戶和群組
+RUN set -x \
+    && addgroup -g 101 -S nginx \
+    && adduser -S -D -H -u 101 -h /var/cache/nginx -s /sbin/nologin -G nginx -g nginx nginx
 
-# 複製靜態檔案到 Nginx 目錄
-COPY app/ /usr/share/nginx/html/
+# 設定所需目錄的權限
+RUN mkdir -p /usr/share/nginx/html \
+    && chown -R nginx:nginx /usr/share/nginx/html \
+    && mkdir -p /var/cache/nginx \
+    && chown -R nginx:nginx /var/cache/nginx \
+    && mkdir -p /var/log/nginx \
+    && chown -R nginx:nginx /var/log/nginx \
+    && mkdir -p /tmp \
+    && chown -R nginx:nginx /tmp
 
-# 建立自訂的 Nginx 配置（監聽 8080 端口以支援非 root 用戶）
+# 複製靜態檔案到 Nginx 目錄並設定權限
+COPY --chown=nginx:nginx app/ /usr/share/nginx/html/
+
+# 複製並設定 nginx 配置
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# 修改 Nginx 配置以支援非 root 用戶運行
-RUN sed -i 's/listen\s*80;/listen 8080;/g' /etc/nginx/conf.d/default.conf && \
-    sed -i 's/listen\s*\[::\]:80;/listen [::]:8080;/g' /etc/nginx/conf.d/default.conf && \
-    sed -i '/user\s*nginx;/d' /etc/nginx/nginx.conf && \
-    sed -i 's,/var/run/nginx.pid,/tmp/nginx.pid,' /etc/nginx/nginx.conf && \
-    sed -i "/^http {/a \    proxy_temp_path /tmp/proxy_temp;\n    client_body_temp_path /tmp/client_temp;\n    fastcgi_temp_path /tmp/fastcgi_temp;\n    uwsgi_temp_path /tmp/uwsgi_temp;\n    scgi_temp_path /tmp/scgi_temp;\n" /etc/nginx/nginx.conf
+# 修改 Nginx 配置
+RUN sed -i 's/listen\s*80;/listen 8080;/g' /etc/nginx/conf.d/default.conf \
+    && sed -i 's/listen\s*\[::\]:80;/listen [::]:8080;/g' /etc/nginx/conf.d/default.conf \
+    && sed -i 's,/var/run/nginx.pid,/tmp/nginx.pid,' /etc/nginx/nginx.conf \
+    && chown -R nginx:nginx /etc/nginx/conf.d/default.conf
 
-# 建立非 root 使用者
-RUN adduser -D -H -u 1000 nginxuser && \
-    chown -R nginxuser:nginxuser /usr/share/nginx/html && \
-    chown -R nginxuser:nginxuser /var/cache/nginx && \
-    chown -R nginxuser:nginxuser /tmp
+# 切換到 nginx 用戶
+USER nginx
 
-# 切換到非 root 使用者
-USER nginxuser
-
-# 暴露 8080 端口（非特權端口）
+# 暴露 8080 端口
 EXPOSE 8080
 
 # 啟動 Nginx
