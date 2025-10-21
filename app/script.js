@@ -66,8 +66,8 @@ function handleCellClick(e) {
     makeMove(cellIndex, 'X');
     
     if (gameActive && currentPlayer === 'O') {
-        resetTimer();
-        setTimeout(() => computerMove(), 1000);
+        // 電腦立即移動，不需等待
+        computerMove();
     }
 }
 
@@ -94,18 +94,16 @@ function startTimer() {
     clearInterval(timer);
     
     timer = setInterval(() => {
-        timeLeft--;
-        updateTimerDisplay();
-        
-        if (timeLeft <= 0) {
-            clearInterval(timer);
-            if (gameActive) {
-                if (currentPlayer === 'X') {
-                    // 時間到，自動選擇
-                    const randomIndex = getRandomMove();
-                    if (randomIndex !== -1) {
-                        makeMove(randomIndex, 'X');
-                    }
+        if (currentPlayer === 'X' && gameActive) {
+            timeLeft--;
+            updateTimerDisplay();
+            
+            if (timeLeft <= 0) {
+                clearInterval(timer);
+                // 時間到，自動隨機選擇
+                const randomIndex = getRandomMove();
+                if (randomIndex !== -1) {
+                    makeMove(randomIndex, 'X');
                 }
             }
         }
@@ -126,6 +124,7 @@ function checkResult() {
     let roundWon = false;
     let winningCombination = null;
     
+    // 檢查獲勝
     for (let i = 0; i < winningConditions.length; i++) {
         const [a, b, c, d] = winningConditions[i];
         if (board[a] && 
@@ -157,16 +156,29 @@ function checkResult() {
         statusDisplay.classList.add('winner');
         updateScoreDisplay();
         return;
-    }
-    
-    // 檢查平手
-    if (!board.includes('')) {
+    } else if (!hasWinningPossibility()) {
+        // 如果沒有獲勝可能，直接結束為平手
         gameActive = false;
         drawScore++;
-        statusDisplay.textContent = '平手！';
+        statusDisplay.textContent = '平手！無法形成連線';
         statusDisplay.classList.add('draw');
         updateScoreDisplay();
     }
+}
+
+// 檢查是否還有獲勝可能
+function hasWinningPossibility() {
+    // 檢查每個獲勝組合
+    for (let condition of winningConditions) {
+        let [a, b, c, d] = condition;
+        let cells = [board[a], board[b], board[c], board[d]];
+        
+        // 如果這個組合中沒有對方的棋子，表示還有獲勝可能
+        if (!cells.includes('X') || !cells.includes('O')) {
+            return true;
+        }
+    }
+    return false;
 }
 
 // 更新狀態顯示
