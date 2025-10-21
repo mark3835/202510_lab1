@@ -102,15 +102,22 @@ h1 {
     border-radius: 15px;
 }
 
+.game-board {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin: 20px auto;
+    max-width: 400px;
+}
+
 .cell {
     aspect-ratio: 1;
-    background: white;
-    border-radius: 10px;
+    background: #fff;
+    border: 2px solid #333;
+    font-size: 2em;
     display: flex;
-    justify-content: center;
     align-items: center;
-    font-size: 3em;
-    font-weight: bold;
+    justify-content: center;
     cursor: pointer;
     transition: all 0.3s ease;
     color: #333;
@@ -211,6 +218,14 @@ button {
 #difficultySelect:focus {
     outline: none;
     border-color: #764ba2;
+}
+
+.timer {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 10px;
+    text-align: center;
 }
 
 @media (max-width: 480px) {

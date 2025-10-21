@@ -1,5 +1,5 @@
 // 遊戲狀態
-let board = ['', '', '', '', '', '', '', '', ''];
+let board = ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']; // 改為 16 格
 let currentPlayer = 'X';
 let gameActive = true;
 let playerScore = 0;
@@ -7,16 +7,26 @@ let computerScore = 0;
 let drawScore = 0;
 let difficulty = 'medium';
 
-// 獲勝組合
+// 新增計時器相關變數
+let timer;
+let timeLeft = 10;
+const TIME_LIMIT = 10;
+
+// 獲勝組合 (4x4)
 const winningConditions = [
-    [0, 1, 2],
-    [3, 4, 5],
-    [6, 7, 8],
-    [0, 3, 6],
-    [1, 4, 7],
-    [2, 5, 8],
-    [0, 4, 8],
-    [2, 4, 6]
+    // 橫行
+    [0, 1, 2, 3],
+    [4, 5, 6, 7],
+    [8, 9, 10, 11],
+    [12, 13, 14, 15],
+    // 直行
+    [0, 4, 8, 12],
+    [1, 5, 9, 13],
+    [2, 6, 10, 14],
+    [3, 7, 11, 15],
+    // 對角線
+    [0, 5, 10, 15],
+    [3, 6, 9, 12]
 ];
 
 // DOM 元素
@@ -28,9 +38,13 @@ const difficultySelect = document.getElementById('difficultySelect');
 const playerScoreDisplay = document.getElementById('playerScore');
 const computerScoreDisplay = document.getElementById('computerScore');
 const drawScoreDisplay = document.getElementById('drawScore');
+const timerDisplay = document.getElementById('timer'); // 新增計時器顯示
 
 // 初始化遊戲
 function init() {
+    // 從 Cookie 讀取分數
+    loadScoresFromCookies();
+    
     cells.forEach(cell => {
         cell.addEventListener('click', handleCellClick);
     });
@@ -38,12 +52,7 @@ function init() {
     resetScoreBtn.addEventListener('click', resetScore);
     difficultySelect.addEventListener('change', handleDifficultyChange);
     updateScoreDisplay();
-}
-
-// 移除不安全的評估函數
-function evaluateUserInput(input) {
-    // 依據實際需求改用安全的方式處理輸入
-    return Number(input);
+    startTimer();
 }
 
 // 處理格子點擊
@@ -54,15 +63,11 @@ function handleCellClick(e) {
         return;
     }
     
-    // 安全的更新狀態顯示
-    statusDisplay.textContent = e.target.getAttribute('data-index');
-    
     makeMove(cellIndex, 'X');
     
     if (gameActive && currentPlayer === 'O') {
-        const userInput = prompt("輸入延遲時間（毫秒）");
-        // 安全的 setTimeout 使用方式
-        setTimeout(() => computerMove(), parseInt(userInput) || 1000);
+        resetTimer();
+        setTimeout(() => computerMove(), 1000);
     }
 }
 
@@ -82,16 +87,53 @@ function makeMove(index, player) {
     }
 }
 
+// 計時器功能
+function startTimer() {
+    timeLeft = TIME_LIMIT;
+    updateTimerDisplay();
+    clearInterval(timer);
+    
+    timer = setInterval(() => {
+        timeLeft--;
+        updateTimerDisplay();
+        
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            if (gameActive) {
+                if (currentPlayer === 'X') {
+                    // 時間到，自動選擇
+                    const randomIndex = getRandomMove();
+                    if (randomIndex !== -1) {
+                        makeMove(randomIndex, 'X');
+                    }
+                }
+            }
+        }
+    }, 1000);
+}
+
+function resetTimer() {
+    clearInterval(timer);
+    startTimer();
+}
+
+function updateTimerDisplay() {
+    timerDisplay.textContent = `剩餘時間: ${timeLeft} 秒`;
+}
+
 // 檢查遊戲結果
 function checkResult() {
     let roundWon = false;
     let winningCombination = null;
     
     for (let i = 0; i < winningConditions.length; i++) {
-        const [a, b, c] = winningConditions[i];
-        if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+        const [a, b, c, d] = winningConditions[i];
+        if (board[a] && 
+            board[a] === board[b] && 
+            board[a] === board[c] &&
+            board[a] === board[d]) {
             roundWon = true;
-            winningCombination = [a, b, c];
+            winningCombination = [a, b, c, d];
             break;
         }
     }
@@ -192,7 +234,7 @@ function getBestMove() {
     let bestScore = -Infinity;
     let bestMove = -1;
     
-    for (let i = 0; i < 9; i++) {
+    for (let i = 0; i < 16; i++) {
         if (board[i] === '') {
             board[i] = 'O';
             let score = minimax(board, 0, false);
@@ -220,7 +262,7 @@ function minimax(board, depth, isMaximizing) {
     
     if (isMaximizing) {
         let bestScore = -Infinity;
-        for (let i = 0; i < 9; i++) {
+        for (let i = 0; i < 16; i++) {
             if (board[i] === '') {
                 board[i] = 'O';
                 let score = minimax(board, depth + 1, false);
@@ -231,7 +273,7 @@ function minimax(board, depth, isMaximizing) {
         return bestScore;
     } else {
         let bestScore = Infinity;
-        for (let i = 0; i < 9; i++) {
+        for (let i = 0; i < 16; i++) {
             if (board[i] === '') {
                 board[i] = 'X';
                 let score = minimax(board, depth + 1, true);
@@ -259,9 +301,34 @@ function checkWinner() {
     return null;
 }
 
+// Cookie 相關功能
+function saveScoresToCookies() {
+    document.cookie = `playerScore=${playerScore}; max-age=31536000; path=/`;
+    document.cookie = `computerScore=${computerScore}; max-age=31536000; path=/`;
+    document.cookie = `drawScore=${drawScore}; max-age=31536000; path=/`;
+}
+
+function loadScoresFromCookies() {
+    const cookies = document.cookie.split(';');
+    cookies.forEach(cookie => {
+        const [name, value] = cookie.trim().split('=');
+        switch(name) {
+            case 'playerScore':
+                playerScore = parseInt(value) || 0;
+                break;
+            case 'computerScore':
+                computerScore = parseInt(value) || 0;
+                break;
+            case 'drawScore':
+                drawScore = parseInt(value) || 0;
+                break;
+        }
+    });
+}
+
 // 重置遊戲
 function resetGame() {
-    board = ['', '', '', '', '', '', '', '', ''];
+    board = ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''];
     currentPlayer = 'X';
     gameActive = true;
     
@@ -272,6 +339,7 @@ function resetGame() {
         cell.textContent = '';
         cell.classList.remove('taken', 'x', 'o', 'winning');
     });
+    resetTimer();
 }
 
 // 重置分數
@@ -288,18 +356,13 @@ function updateScoreDisplay() {
     playerScoreDisplay.textContent = playerScore;
     computerScoreDisplay.textContent = computerScore;
     drawScoreDisplay.textContent = drawScore;
+    saveScoresToCookies();
 }
 
 // 處理難度變更
 function handleDifficultyChange(e) {
     difficulty = e.target.value;
     resetGame();
-}
-
-// 安全的輸入驗證
-function validateInput(input) {
-    const safeRegex = /^[a-zA-Z0-9]+$/;
-    return safeRegex.test(input);
 }
 
 // 啟動遊戲
