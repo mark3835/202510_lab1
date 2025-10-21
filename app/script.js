@@ -1,5 +1,5 @@
 // 遊戲狀態
-let board = ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']; // 改為 16 格
+let board = ['', '', '', '', '', '', '', '', '']; // 改回 9 格
 let currentPlayer = 'X';
 let gameActive = true;
 let playerScore = 0;
@@ -7,26 +7,19 @@ let computerScore = 0;
 let drawScore = 0;
 let difficulty = 'medium';
 
-// 新增計時器相關變數
-let timer;
-let timeLeft = 10;
-const TIME_LIMIT = 10;
-
-// 獲勝組合 (4x4)
+// 獲勝組合 (3x3)
 const winningConditions = [
     // 橫行
-    [0, 1, 2, 3],
-    [4, 5, 6, 7],
-    [8, 9, 10, 11],
-    [12, 13, 14, 15],
+    [0, 1, 2],
+    [3, 4, 5],
+    [6, 7, 8],
     // 直行
-    [0, 4, 8, 12],
-    [1, 5, 9, 13],
-    [2, 6, 10, 14],
-    [3, 7, 11, 15],
+    [0, 3, 6],
+    [1, 4, 7],
+    [2, 5, 8],
     // 對角線
-    [0, 5, 10, 15],
-    [3, 6, 9, 12]
+    [0, 4, 8],
+    [2, 4, 6]
 ];
 
 // DOM 元素
@@ -119,11 +112,10 @@ function updateCell(index, player) {
 // 檢查勝利
 function checkWin() {
     for (let condition of winningConditions) {
-        const [a, b, c, d] = condition;
+        const [a, b, c] = condition;
         if (board[a] && 
             board[a] === board[b] && 
-            board[a] === board[c] &&
-            board[a] === board[d]) {
+            board[a] === board[c]) {
             condition.forEach(i => {
                 document.querySelector(`[data-index="${i}"]`).classList.add('winning');
             });
@@ -186,44 +178,56 @@ function updateTimerDisplay() {
 
 // 修改檢查結果邏輯
 function checkResult() {
-    // 檢查獲勝
+    let roundWon = false;
+    let winningCombination = null;
+    
     for (let i = 0; i < winningConditions.length; i++) {
-        const [a, b, c, d] = winningConditions[i];
+        const [a, b, c] = winningConditions[i];
         if (board[a] && 
             board[a] === board[b] && 
-            board[a] === board[c] &&
-            board[a] === board[d]) {
-            
-            const winner = board[a];
-            if (winner === 'X') {
-                playerScore++;
-                statusDisplay.textContent = '🎉 恭喜您獲勝！';
-            } else {
-                computerScore++;
-                statusDisplay.textContent = '😢 電腦獲勝！';
-            }
-            updateScoreDisplay();
-            return true;
+            board[a] === board[c]) {
+            roundWon = true;
+            winningCombination = [a, b, c];
+            break;
         }
     }
     
-    // 檢查是否平手
-    if (!hasWinningPossibility()) {
-        drawScore++;
-        statusDisplay.textContent = '平手！無法形成連線';
+    if (roundWon) {
+        const winner = currentPlayer;
+        gameActive = false;
+        
+        winningCombination.forEach(index => {
+            document.querySelector(`[data-index="${index}"]`).classList.add('winning');
+        });
+        
+        if (winner === 'X') {
+            playerScore++;
+            statusDisplay.textContent = '🎉 恭喜您獲勝！';
+        } else {
+            computerScore++;
+            statusDisplay.textContent = '😢 電腦獲勝！';
+        }
+        statusDisplay.classList.add('winner');
         updateScoreDisplay();
-        return true;
+        return;
     }
     
-    return false;
+    // 只檢查是否全部格子已填滿
+    if (!board.includes('')) {
+        gameActive = false;
+        drawScore++;
+        statusDisplay.textContent = '平手！';
+        statusDisplay.classList.add('draw');
+        updateScoreDisplay();
+    }
 }
 
 // 檢查是否還有獲勝可能
 function hasWinningPossibility() {
     // 檢查每個獲勝組合
     for (let condition of winningConditions) {
-        let [a, b, c, d] = condition;
-        let cells = [board[a], board[b], board[c], board[d]];
+        let [a, b, c] = condition;
+        let cells = [board[a], board[b], board[c]];
         
         // 如果這個組合中沒有對方的棋子，表示還有獲勝可能
         if (!cells.includes('X') || !cells.includes('O')) {
@@ -270,7 +274,7 @@ function getMediumMove() {
 
 // 重置遊戲
 function resetGame() {
-    board = Array(16).fill('');
+    board = Array(9).fill('');
     currentPlayer = 'X';
     gameActive = true;
     

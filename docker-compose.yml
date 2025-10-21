@@ -1,7 +1,8 @@
 services:
   tic-tac-toe:
-    image: ${DOCKER_REGISTRY:-ghcr.io}/tryweb/202510_lab1:latest
+    image: ${DOCKER_REGISTRY:-ghcr.io}/mark3835/202510_lab1
     container_name: tic-tac-toe-game
+    user: "1000:1000"  # 添加使用者權限設定
     ports:
       - "8080:8080"
     restart: unless-stopped
