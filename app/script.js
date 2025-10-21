@@ -71,19 +71,41 @@ function handleCellClick(e) {
     }
 }
 
-// 執行移動
+// 修改電腦移動邏輯，簡化決策過程
+function computerMove() {
+    if (!gameActive) return;
+    
+    // 簡化為隨機移動，避免複雜運算
+    const move = getRandomMove();
+    
+    if (move !== -1) {
+        makeMove(move, 'O');
+        if (gameActive) {
+            currentPlayer = 'X';
+            startTimer(); // 重新開始玩家的計時
+        }
+    }
+}
+
+// 簡化移動執行邏輯
 function makeMove(index, player) {
+    if (!gameActive || board[index] !== '') return;
+    
     board[index] = player;
     const cell = document.querySelector(`[data-index="${index}"]`);
     cell.textContent = player;
     cell.classList.add('taken');
     cell.classList.add(player.toLowerCase());
     
-    checkResult();
-    
-    if (gameActive) {
-        currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+    if (checkResult()) {
+        gameActive = false;
+        clearInterval(timer);
+    } else {
+        currentPlayer = player === 'X' ? 'O' : 'X';
         updateStatus();
+        if (currentPlayer === 'O') {
+            computerMove();
+        }
     }
 }
 
@@ -119,11 +141,8 @@ function updateTimerDisplay() {
     timerDisplay.textContent = `剩餘時間: ${timeLeft} 秒`;
 }
 
-// 檢查遊戲結果
+// 修改檢查結果邏輯
 function checkResult() {
-    let roundWon = false;
-    let winningCombination = null;
-    
     // 檢查獲勝
     for (let i = 0; i < winningConditions.length; i++) {
         const [a, b, c, d] = winningConditions[i];
@@ -131,39 +150,29 @@ function checkResult() {
             board[a] === board[b] && 
             board[a] === board[c] &&
             board[a] === board[d]) {
-            roundWon = true;
-            winningCombination = [a, b, c, d];
-            break;
+            
+            const winner = board[a];
+            if (winner === 'X') {
+                playerScore++;
+                statusDisplay.textContent = '🎉 恭喜您獲勝！';
+            } else {
+                computerScore++;
+                statusDisplay.textContent = '😢 電腦獲勝！';
+            }
+            updateScoreDisplay();
+            return true;
         }
     }
     
-    if (roundWon) {
-        const winner = currentPlayer;
-        gameActive = false;
-        
-        // 高亮獲勝格子
-        winningCombination.forEach(index => {
-            document.querySelector(`[data-index="${index}"]`).classList.add('winning');
-        });
-        
-        if (winner === 'X') {
-            playerScore++;
-            statusDisplay.textContent = '🎉 恭喜您獲勝！';
-        } else {
-            computerScore++;
-            statusDisplay.textContent = '😢 電腦獲勝！';
-        }
-        statusDisplay.classList.add('winner');
-        updateScoreDisplay();
-        return;
-    } else if (!hasWinningPossibility()) {
-        // 如果沒有獲勝可能，直接結束為平手
-        gameActive = false;
+    // 檢查是否平手
+    if (!hasWinningPossibility()) {
         drawScore++;
         statusDisplay.textContent = '平手！無法形成連線';
-        statusDisplay.classList.add('draw');
         updateScoreDisplay();
+        return true;
     }
+    
+    return false;
 }
 
 // 檢查是否還有獲勝可能
@@ -185,28 +194,6 @@ function hasWinningPossibility() {
 function updateStatus() {
     if (gameActive && currentPlayer === 'X') {
         statusDisplay.textContent = '您是 X，輪到您下棋';
-    }
-}
-
-// 電腦移動
-function computerMove() {
-    if (!gameActive) return;
-    
-    let move;
-    switch(difficulty) {
-        case 'hard':
-            move = getBestMove();
-            break;
-        case 'medium':
-            move = getMediumMove();
-            break;
-        default:
-            move = getRandomMove();
-    }
-    
-    if (move !== -1) {
-        makeMove(move, 'O');
-        startTimer(); // 重新開始計時給玩家
     }
 }
 
@@ -234,34 +221,9 @@ function getMediumMove() {
     }
 }
 
-// 困難難度：Minimax 演算法
-function getBestMove() {
-    let bestScore = -Infinity;
-    let bestMove = -1;
-    
-    for (let i = 0; i < 16; i++) {
-        if (board[i] === '') {
-            board[i] = 'O';
-            let score = minimax(board, 0, false);
-            board[i] = '';
-            
-            if (score > bestScore) {
-                bestScore = score;
-                bestMove = i;
-            }
-        }
-    }
-    
-    return bestMove;
-}
+// 移除或註解掉 minimax 相關函數
+// function getBestMove() { ... }
+// function minimax() { ... }
 
-// Minimax 演算法實現
-function minimax(board, depth, isMaximizing) {
-    // 增加深度限制，避免過度遞迴
-    if (depth > 3) {
-        return 0;
-    }
-
-    const result = checkWinner();
-    if (result !== null) {
-        if
+// 開始遊戲
+init();
