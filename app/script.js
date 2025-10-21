@@ -59,54 +59,97 @@ function init() {
 function handleCellClick(e) {
     const cellIndex = parseInt(e.target.getAttribute('data-index'));
     
-    if (board[cellIndex] !== '' || !gameActive || currentPlayer === 'O') {
+    if (board[cellIndex] !== '' || !gameActive || currentPlayer !== 'X') {
         return;
     }
     
-    makeMove(cellIndex, 'X');
-    
-    if (gameActive && currentPlayer === 'O') {
-        // 電腦立即移動，不需等待
-        computerMove();
-    }
+    playerMove(cellIndex);
 }
 
-// 修改電腦移動邏輯，簡化決策過程
+// 新增玩家移動函數
+function playerMove(index) {
+    board[index] = 'X';
+    updateCell(index, 'X');
+    
+    if (checkWin()) {
+        endGame('X');
+        return;
+    }
+    
+    if (!hasWinningPossibility()) {
+        endGame('draw');
+        return;
+    }
+    
+    currentPlayer = 'O';
+    setTimeout(computerMove, 100);
+}
+
+// 簡化電腦移動
 function computerMove() {
     if (!gameActive) return;
     
-    // 簡化為隨機移動，避免複雜運算
     const move = getRandomMove();
+    if (move === -1) return;
     
-    if (move !== -1) {
-        makeMove(move, 'O');
-        if (gameActive) {
-            currentPlayer = 'X';
-            startTimer(); // 重新開始玩家的計時
-        }
+    board[move] = 'O';
+    updateCell(move, 'O');
+    
+    if (checkWin()) {
+        endGame('O');
+        return;
     }
+    
+    if (!hasWinningPossibility()) {
+        endGame('draw');
+        return;
+    }
+    
+    currentPlayer = 'X';
+    startTimer();
 }
 
-// 簡化移動執行邏輯
-function makeMove(index, player) {
-    if (!gameActive || board[index] !== '') return;
-    
-    board[index] = player;
+// 更新格子顯示
+function updateCell(index, player) {
     const cell = document.querySelector(`[data-index="${index}"]`);
     cell.textContent = player;
-    cell.classList.add('taken');
-    cell.classList.add(player.toLowerCase());
-    
-    if (checkResult()) {
-        gameActive = false;
-        clearInterval(timer);
-    } else {
-        currentPlayer = player === 'X' ? 'O' : 'X';
-        updateStatus();
-        if (currentPlayer === 'O') {
-            computerMove();
+    cell.classList.add('taken', player.toLowerCase());
+}
+
+// 檢查勝利
+function checkWin() {
+    for (let condition of winningConditions) {
+        const [a, b, c, d] = condition;
+        if (board[a] && 
+            board[a] === board[b] && 
+            board[a] === board[c] &&
+            board[a] === board[d]) {
+            condition.forEach(i => {
+                document.querySelector(`[data-index="${i}"]`).classList.add('winning');
+            });
+            return true;
         }
     }
+    return false;
+}
+
+// 結束遊戲
+function endGame(result) {
+    gameActive = false;
+    clearInterval(timer);
+    
+    if (result === 'X') {
+        playerScore++;
+        statusDisplay.textContent = '🎉 恭喜您獲勝！';
+    } else if (result === 'O') {
+        computerScore++;
+        statusDisplay.textContent = '😢 電腦獲勝！';
+    } else {
+        drawScore++;
+        statusDisplay.textContent = '平手！無法形成連線';
+    }
+    
+    updateScoreDisplay();
 }
 
 // 計時器功能
@@ -224,6 +267,22 @@ function getMediumMove() {
 // 移除或註解掉 minimax 相關函數
 // function getBestMove() { ... }
 // function minimax() { ... }
+
+// 重置遊戲
+function resetGame() {
+    board = Array(16).fill('');
+    currentPlayer = 'X';
+    gameActive = true;
+    
+    cells.forEach(cell => {
+        cell.textContent = '';
+        cell.classList.remove('taken', 'x', 'o', 'winning');
+    });
+    
+    statusDisplay.textContent = '您是 X，輪到您下棋';
+    statusDisplay.classList.remove('winner', 'draw');
+    startTimer();
+}
 
 // 開始遊戲
 init();
