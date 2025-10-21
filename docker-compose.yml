@@ -1,6 +1,6 @@
 services:
   tic-tac-toe:
-    image: ghcr.io/tryweb/202510_lab1:latest
+    image: ${DOCKER_REGISTRY:-ghcr.io}/tryweb/202510_lab1:latest
     container_name: tic-tac-toe-game
     ports:
       - "8080:8080"
@@ -14,5 +14,5 @@ services:
       retries: 3
       start_period: 10s
     labels:
-      - "com.example.description=井字遊戲 - 靜態網頁應用"
-      - "com.example.version=latest"
+      - "app.description=Tic Tac Toe Game"
+      - "app.version=latest"

@@ -296,17 +296,11 @@ function handleDifficultyChange(e) {
     resetGame();
 }
 
-// 移除危險的正則表達式函數
+// 安全的輸入驗證
 function validateInput(input) {
-    // 使用更安全的正則表達式模式
     const safeRegex = /^[a-zA-Z0-9]+$/;
     return safeRegex.test(input);
 }
-
-// 移除硬編碼的敏感資訊
-// 如果需要這些值，建議使用環境變數或安全的配置管理
-// const API_KEY = process.env.API_KEY;
-// const DATABASE_URL = process.env.DATABASE_URL;
 
 // 啟動遊戲
 init();

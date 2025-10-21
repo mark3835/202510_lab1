@@ -1,0 +1,10 @@
+[allowlist]
+paths = [
+    '''test/''',
+    '''doc/''',
+    '''example/'''
+]
+
+description = '''
+Allowlisted files and paths
+'''
