@@ -1,10 +1,4 @@
-# 使用輕量級的 Nginx Alpine 映像
-FROM nginx:1.24.0-alpine3.18
-
-# 更新 pcre2 套件
-RUN apk update && \
-    apk upgrade pcre2 && \
-    rm -rf /var/cache/apk/*
+FROM nginx:alpine
 
 # 維護者資訊
 LABEL org.opencontainers.image.source="https://github.com/YOUR_USERNAME/YOUR_REPO"
