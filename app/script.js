@@ -183,12 +183,8 @@ function hasWinningPossibility() {
 
 // 更新狀態顯示
 function updateStatus() {
-    if (gameActive) {
-        if (currentPlayer === 'X') {
-            statusDisplay.textContent = '您是 X，輪到您下棋';
-        } else {
-            statusDisplay.textContent = '電腦是 O，正在思考...';
-        }
+    if (gameActive && currentPlayer === 'X') {
+        statusDisplay.textContent = '您是 X，輪到您下棋';
     }
 }
 
@@ -197,16 +193,12 @@ function computerMove() {
     if (!gameActive) return;
     
     let move;
-    
     switch(difficulty) {
-        case 'easy':
-            move = getRandomMove();
+        case 'hard':
+            move = getBestMove();
             break;
         case 'medium':
             move = getMediumMove();
-            break;
-        case 'hard':
-            move = getBestMove();
             break;
         default:
             move = getRandomMove();
@@ -214,6 +206,7 @@ function computerMove() {
     
     if (move !== -1) {
         makeMove(move, 'O');
+        startTimer(); // 重新開始計時給玩家
     }
 }
 
@@ -264,118 +257,11 @@ function getBestMove() {
 
 // Minimax 演算法實現
 function minimax(board, depth, isMaximizing) {
-    const result = checkWinner();
-    
-    if (result !== null) {
-        if (result === 'O') return 10 - depth;
-        if (result === 'X') return depth - 10;
+    // 增加深度限制，避免過度遞迴
+    if (depth > 3) {
         return 0;
     }
-    
-    if (isMaximizing) {
-        let bestScore = -Infinity;
-        for (let i = 0; i < 16; i++) {
-            if (board[i] === '') {
-                board[i] = 'O';
-                let score = minimax(board, depth + 1, false);
-                board[i] = '';
-                bestScore = Math.max(score, bestScore);
-            }
-        }
-        return bestScore;
-    } else {
-        let bestScore = Infinity;
-        for (let i = 0; i < 16; i++) {
-            if (board[i] === '') {
-                board[i] = 'X';
-                let score = minimax(board, depth + 1, true);
-                board[i] = '';
-                bestScore = Math.min(score, bestScore);
-            }
-        }
-        return bestScore;
-    }
-}
 
-// 檢查勝者（用於 Minimax）
-function checkWinner() {
-    for (let i = 0; i < winningConditions.length; i++) {
-        const [a, b, c] = winningConditions[i];
-        if (board[a] && board[a] === board[b] && board[a] === board[c]) {
-            return board[a];
-        }
-    }
-    
-    if (!board.includes('')) {
-        return 'draw';
-    }
-    
-    return null;
-}
-
-// Cookie 相關功能
-function saveScoresToCookies() {
-    document.cookie = `playerScore=${playerScore}; max-age=31536000; path=/`;
-    document.cookie = `computerScore=${computerScore}; max-age=31536000; path=/`;
-    document.cookie = `drawScore=${drawScore}; max-age=31536000; path=/`;
-}
-
-function loadScoresFromCookies() {
-    const cookies = document.cookie.split(';');
-    cookies.forEach(cookie => {
-        const [name, value] = cookie.trim().split('=');
-        switch(name) {
-            case 'playerScore':
-                playerScore = parseInt(value) || 0;
-                break;
-            case 'computerScore':
-                computerScore = parseInt(value) || 0;
-                break;
-            case 'drawScore':
-                drawScore = parseInt(value) || 0;
-                break;
-        }
-    });
-}
-
-// 重置遊戲
-function resetGame() {
-    board = ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''];
-    currentPlayer = 'X';
-    gameActive = true;
-    
-    statusDisplay.textContent = '您是 X，輪到您下棋';
-    statusDisplay.classList.remove('winner', 'draw');
-    
-    cells.forEach(cell => {
-        cell.textContent = '';
-        cell.classList.remove('taken', 'x', 'o', 'winning');
-    });
-    resetTimer();
-}
-
-// 重置分數
-function resetScore() {
-    playerScore = 0;
-    computerScore = 0;
-    drawScore = 0;
-    updateScoreDisplay();
-    resetGame();
-}
-
-// 更新分數顯示
-function updateScoreDisplay() {
-    playerScoreDisplay.textContent = playerScore;
-    computerScoreDisplay.textContent = computerScore;
-    drawScoreDisplay.textContent = drawScore;
-    saveScoresToCookies();
-}
-
-// 處理難度變更
-function handleDifficultyChange(e) {
-    difficulty = e.target.value;
-    resetGame();
-}
-
-// 啟動遊戲
-init();
+    const result = checkWinner();
+    if (result !== null) {
+        if
